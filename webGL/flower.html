@@ -56,7 +56,8 @@
 
 			var verticalMirror, groundMirror;
 
-			var bloom = 0;
+			var bloom = -10;
+			var lathes = [];
 
 			function init() {
 
@@ -140,123 +141,146 @@
 				mainLight.position.y = 60;
 				scene.add( mainLight );
 
+				drawFlower();
+
+				console.log("CALLED FILLSCENE");
+
+			}
+
+			function drawFlower() { 
 				// lathe 1
+				for (var i = 0; i < lathes.length; i++) {
+					scene.remove(lathes[i]);
+				}
+
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 10 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 10 + 5 + bloom, ( i + 1 ) * 2) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xed5e5e} );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 2
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 9 + 5, ( i + 1 ) * 2  + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 9 + 5 + bloom, ( i + 1 ) * 2 ) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xef7777 } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 3
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 8 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 8 + 5 + bloom, ( i + 1 ) * 2) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xf48686 } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 4
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 7 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 7 + 5 + bloom, ( i + 1 ) * 2) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xfc9797 } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 5
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 6 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 6 + 5 + bloom, ( i + 1 ) * 2) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xffadad } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 6
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 5 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 5 + 5 + bloom, ( i + 1 ) * 2) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xffc1c1 } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 7
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 4 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 4 + 5 + bloom, ( i + 1 ) * 2) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xffd1d1 } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 8
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 3 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 3 + 5 + bloom, ( i + 1 ) * 2) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xffe2e2 } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 9
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 2 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 2 + 5 + bloom, ( i + 1 ) * 2) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xfff2f2 } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 10
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 1 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 1 + 5 + bloom, ( i + 1 ) * 2 ) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xfff7f7 } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
 
 				// lathe 5
 				var points = [];
 				for ( var i = 0; i < 10; i ++ ) {
-					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 0 + 5, ( i + 1 ) * 2 + bloom) );
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 0 + 5 + bloom, ( i + 1 ) * 2) );
 				}
 				var geometry = new THREE.LatheGeometry( points );
 				var material = new THREE.MeshBasicMaterial( { color: 0xffffff } );
 				var lathe = new THREE.Mesh( geometry, material );
+				lathes.push(lathe);
 				scene.add( lathe );
-
 			}
 
 			function render() {
 				// render (update) the mirrors
+				drawFlower();
 				groundMirror.renderWithMirror( verticalMirror );
 				verticalMirror.renderWithMirror( groundMirror );
 				renderer.render(scene, camera);
+				console.log("CALLED RENDER")
 
 			}
 
@@ -281,10 +305,12 @@
 			function handleKeys() {
 			    if (currentlyPressedKeys[85]) {
 			      // U
+			        console.log("UUUUUUU");
 			    	bloom += .5;
 			    }
 			    if (currentlyPressedKeys[74]) {
 			      // J
+			      	console.log("JJJJJJJ");
 			    	bloom -= .5;
 			    }
 			 }
@@ -400,7 +426,7 @@
 				// var lathe = new THREE.Mesh( geometry, material );
 				// scene.add( lathe );
 
-
+				console.log("CALLED ANIMATE");
 				requestAnimationFrame( animate );
 				handleKeys();
 				render();
