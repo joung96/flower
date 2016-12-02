@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - mirror</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				color: #888888;
+				font-family:Monospace;
+				font-size:13px;
+
+				background-color: #000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px;
+				width: 200px;
+				left: calc(50% - 100px);
+				text-align: center;
+			}
+
+			a {
+				color: #00f;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="info"><a href="http://threejs.org" target="_blank">three.js</a> - mirror
+		</div>
+
+		<script src="build/three.js"></script>
+		<script src="js/Mirror.js"></script>
+		<script src="js/controls/OrbitControls.js"></script>
+
+		<script>
+
+			// scene size
+			var WIDTH = window.innerWidth;
+			var HEIGHT = window.innerHeight;
+
+			// camera
+			var VIEW_ANGLE = 45;
+			var ASPECT = WIDTH / HEIGHT;
+			var NEAR = 1;
+			var FAR = 500;
+
+			var camera, scene, renderer;
+
+			var cameraControls;
+
+			var verticalMirror, groundMirror;
+
+			var bloom = 0;
+
+			function init() {
+
+				// renderer
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( WIDTH, HEIGHT );
+
+				// scene
+				scene = new THREE.Scene();
+
+				// camera
+				camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+				camera.position.set( 0, 75, 160 );
+
+				cameraControls = new THREE.OrbitControls(camera, renderer.domElement);
+				cameraControls.target.set( 0, 40, 0);
+				cameraControls.maxDistance = 400;
+				cameraControls.minDistance = 10;
+				cameraControls.update();
+
+				var container = document.getElementById( 'container' );
+				container.appendChild( renderer.domElement );
+
+
+			}
+			
+
+			function fillScene() {
+
+				var planeGeo = new THREE.PlaneBufferGeometry( 100.1, 100.1 );
+
+				// MIRROR planes
+				groundMirror = new THREE.Mirror( renderer, camera, { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, color: 0x777777 } );
+
+				var mirrorMesh = new THREE.Mesh( planeGeo, groundMirror.material );
+				mirrorMesh.add( groundMirror );
+				mirrorMesh.rotateX( - Math.PI / 2 );
+				scene.add( mirrorMesh );
+
+				verticalMirror = new THREE.Mirror( renderer, camera, { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, color:0x889999 } );
+
+				// var verticalMirrorMesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 60, 60 ), verticalMirror.material );
+				// verticalMirrorMesh.add( verticalMirror );
+				// verticalMirrorMesh.position.y = 35;
+				// verticalMirrorMesh.position.z = -45;
+				// scene.add( verticalMirrorMesh );
+
+
+				// walls
+				var planeTop = new THREE.Mesh( planeGeo, new THREE.MeshPhongMaterial( { color: 0xffffff } ) );
+				planeTop.position.y = 100;
+				planeTop.rotateX( Math.PI / 2 );
+				scene.add( planeTop );
+
+				var planeBack = new THREE.Mesh( planeGeo, new THREE.MeshPhongMaterial( { color: 0xffffff } ) );
+				planeBack.position.z = -50;
+				planeBack.position.y = 50;
+				scene.add( planeBack );
+
+				var planeFront = new THREE.Mesh( planeGeo, new THREE.MeshPhongMaterial( { color: 0xffffff } ) );
+				planeFront.position.z = 50;
+				planeFront.position.y = 50;
+				planeFront.rotateY( Math.PI );
+				scene.add( planeFront );
+
+				var planeRight = new THREE.Mesh( planeGeo, new THREE.MeshPhongMaterial( { color: 0xffffff } ) );
+				planeRight.position.x = 50;
+				planeRight.position.y = 50;
+				planeRight.rotateY( - Math.PI / 2 );
+				scene.add( planeRight );
+
+				var planeLeft = new THREE.Mesh( planeGeo, new THREE.MeshPhongMaterial( { color: 0xffffff} ) );
+				planeLeft.position.x = -50;
+				planeLeft.position.y = 50;
+				planeLeft.rotateY( Math.PI / 2 );
+				scene.add( planeLeft );
+
+				// lights
+				var mainLight = new THREE.PointLight( 0xcccccc, 1.5, 250 );
+				mainLight.position.y = 60;
+				scene.add( mainLight );
+
+				// // lathe 1
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 10 + 5, ( i + 1 ) * 2 + bloom) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xed5e5e} );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 2
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 9 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xef7777 } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 3
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 8 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xf48686 } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 4
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 7 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xfc9797 } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 5
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 6 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xffadad } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 6
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 5 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xffc1c1 } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 7
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 4 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xffd1d1 } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 8
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 3 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xffe2e2 } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 9
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 2 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xfff2f2 } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 10
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 1 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xfff7f7 } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+				// // lathe 5
+				// var points = [];
+				// for ( var i = 0; i < 10; i ++ ) {
+				// 	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 0 + 5, ( i + 1 ) * 2 ) );
+				// }
+				// var geometry = new THREE.LatheGeometry( points );
+				// var material = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+				// var lathe = new THREE.Mesh( geometry, material );
+				// scene.add( lathe );
+
+			}
+
+			function render() {
+				// render (update) the mirrors
+				groundMirror.renderWithMirror( verticalMirror );
+				verticalMirror.renderWithMirror( groundMirror );
+				renderer.render(scene, camera);
+
+			}
+
+			  var currentlyPressedKeys = {};
+
+			  function handleKeyDown(event) {
+			    currentlyPressedKeys[event.keyCode] = true;
+
+			    if (String.fromCharCode(event.keyCode) == "F") {
+			      filter += 1;
+			      if (filter == 3) {
+			        filter = 0;
+			      }
+			    }
+			  }
+
+			  function handleKeyUp(event) {
+			    currentlyPressedKeys[event.keyCode] = false;
+			  }
+
+
+			  function handleKeys() {
+			    if (currentlyPressedKeys[85]) {
+			      // U
+			      bloom += .5;
+			    }
+			    if (currentlyPressedKeys[74]) {
+			      // J
+			      bloom -= .5;
+			    }
+			 }
+
+			function animate() {
+				// lathe 1
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 10 + bloom, ( i + 1 ) * 2) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xed5e5e} );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 2
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 9 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xef7777 } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 3
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 8 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xf48686 } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 4
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 7 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xfc9797 } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 5
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 6 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xffadad } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 6
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 5 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xffc1c1 } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 7
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 4 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xffd1d1 } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 8
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 3 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xffe2e2 } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 9
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 2 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xfff2f2 } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 10
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 1 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xfff7f7 } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+				// lathe 5
+				var points = [];
+				for ( var i = 0; i < 10; i ++ ) {
+					points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 0 + 5, ( i + 1 ) * 2 ) );
+				}
+				var geometry = new THREE.LatheGeometry( points );
+				var material = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+				var lathe = new THREE.Mesh( geometry, material );
+				scene.add( lathe );
+
+
+				requestAnimationFrame( animate );
+				handleKeys();
+				render();
+			}
+
+			function update() {
+
+				requestAnimationFrame( update );
+
+				var timer = Date.now() * 0.01;
+
+
+				cameraControls.update();
+				render();
+			}
+
+			document.onkeydown = handleKeyDown;
+			document.onkeyup = handleKeyUp;
+			init();
+			fillScene();
+			update();
+			animate();
+
+
+		</script>
+	</body>
+</html>

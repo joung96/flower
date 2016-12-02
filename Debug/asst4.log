@@ -1,0 +1,11 @@
+﻿  scenegraph.cpp
+c:\users\olivia\documents\cs175\asst7\glsupport.h(11): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+  ppm.cpp
+c:\users\olivia\documents\cs175\asst7\ppm.cpp(13): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+  picker.cpp
+c:\users\olivia\documents\cs175\asst7\picker.cpp(2): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+  glsupport.cpp
+c:\users\olivia\documents\cs175\asst7\glsupport.h(11): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+  asst4.cpp
+c:\users\olivia\documents\cs175\asst7\asst4.cpp(24): fatal error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+  Generating Code...
