@@ -34,7 +34,7 @@
 		<title>cs175_final</title>
 		</div>
 
-		<script src="build/three.js"></script>
+		<script src="build/three.min.js"></script>
 		<script src="js/Mirror.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
 
@@ -56,7 +56,7 @@
 
 			var verticalMirror, groundMirror;
 
-			var bloom = -10;
+			var bloom = -5;
 
 			var pink_lathes = [];
 			var blue_lathes = []; 
@@ -112,12 +112,12 @@
 				// vert mirror
 				verticalMirror = new THREE.Mirror( renderer, camera, { clipBias: 0.003, textureWidth: WIDTH, textureHeight: HEIGHT, color:0x889999 } );
 
-				var verticalMirrorMesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 60, 60 ), verticalMirror.material );
+				var verticalMirrorMesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 100, 100 ), verticalMirror.material );
 				verticalMirrorMesh.add( verticalMirror );
 				verticalMirrorMesh.position.y = 35;
 				verticalMirrorMesh.position.z = -45;
 				scene.add( verticalMirrorMesh );
-
+				
 				// walls
 				var planeTop = new THREE.Mesh( planeGeo, new THREE.MeshPhongMaterial( { color: 0xffffff } ) );
 				planeTop.position.y = 100;
@@ -149,8 +149,26 @@
 
 				// lights
 				var mainLight = new THREE.PointLight( 0xcccccc, 1.5, 250 );
-				mainLight.position.y = 60;
+				mainLight.position.y = 83;
+				mainLight.position.x = -30;
+				mainLight.position.z = -20;
 				scene.add( mainLight );
+
+				var geometry = new THREE.CylinderGeometry( 1, 1, 50, 32 );
+				var material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+				var cylinder = new THREE.Mesh( geometry, material );
+				scene.add( cylinder );
+
+				var geometry = new THREE.SphereGeometry( 5, 32, 32 );
+				var material = new THREE.MeshBasicMaterial( {color: 0xFFE4C4} );
+				var sphere = new THREE.Mesh( geometry, material );
+				scene.add( sphere );
+
+				var geometry = new THREE.SphereGeometry( 2, 32, 32 );
+				var material = new THREE.MeshBasicMaterial( {color: 0xfff000} );
+				var sphere = new THREE.Mesh( geometry, material );
+				sphere.position.y = 25;
+				scene.add( sphere );
 
 				//drawFlower(1, 1, blue);
 			}
@@ -190,7 +208,8 @@
 							var material = new THREE.MeshBasicMaterial( { color: blue[petal]} );
 							var lathe = new THREE.Mesh( geometry, material );
 							lathe.position.x = 0;
-							lathe.position.y = 0;
+							lathe.position.y = 25 + bloom;
+							lathe.position.z = 0;
 							blue_lathes.push(lathe);
 							scene.add( lathe );
 							start += Math.PI/4;
@@ -276,10 +295,10 @@
 			function handleKeys() {
 			    if (currentlyPressedKeys[85]) {
 			    	if (bloom != 0)
-			    		bloom += .5;
+			    	bloom += .5;
 			    }
 			    if (currentlyPressedKeys[74]) {
-			    	if (bloom != -10)
+			    	if (bloom != -5)
 			    		bloom -= .5;
 			    }
 			 }
@@ -291,12 +310,8 @@
 			}
 
 			function update() {
-
 				requestAnimationFrame( update );
-
 				var timer = Date.now() * 0.01;
-
-
 				cameraControls.update();
 				render();
 			}
