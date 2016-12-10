@@ -1069,29 +1069,29 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 	glutPostRedisplay();
 }
 
-static void specialKeyboard(const int key, const int x, const int y) {
-	switch (key) {
-	case GLUT_KEY_RIGHT:
-		g_furHeight *= 1.05;
-		cerr << "fur height = " << g_furHeight << std::endl;
-		break;
-	case GLUT_KEY_LEFT:
-		g_furHeight /= 1.05;
-		std::cerr << "fur height = " << g_furHeight << std::endl;
-		break;
-	case GLUT_KEY_UP:
-		g_hairyness *= 1.05;
-		cerr << "hairyness = " << g_hairyness << std::endl;
-		break;
-	case GLUT_KEY_DOWN:
-		g_hairyness /= 1.05;
-		cerr << "hairyness = " << g_hairyness << std::endl;
-		break;
-	}
+// static void specialKeyboard(const int key, const int x, const int y) {
+// 	switch (key) {
+// 	case GLUT_KEY_RIGHT:
+// 		g_furHeight *= 1.05;
+// 		cerr << "fur height = " << g_furHeight << std::endl;
+// 		break;
+// 	case GLUT_KEY_LEFT:
+// 		g_furHeight /= 1.05;
+// 		std::cerr << "fur height = " << g_furHeight << std::endl;
+// 		break;
+// 	case GLUT_KEY_UP:
+// 		g_hairyness *= 1.05;
+// 		cerr << "hairyness = " << g_hairyness << std::endl;
+// 		break;
+// 	case GLUT_KEY_DOWN:
+// 		g_hairyness /= 1.05;
+// 		cerr << "hairyness = " << g_hairyness << std::endl;
+// 		break;
+// 	}
 
-	hairsSimulationCallback(0);
-	glutPostRedisplay();
-}
+// 	hairsSimulationCallback(0);
+// 	glutPostRedisplay();
+// }
 
 static void initGlutState(int argc, char * argv[]) {
 	glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
@@ -1110,7 +1110,7 @@ static void initGlutState(int argc, char * argv[]) {
 	glutMouseFunc(mouse);                                   // mouse click callback
 	glutKeyboardFunc(keyboard);
 	glutKeyboardUpFunc(keyboardUp);
-	glutSpecialFunc(specialKeyboard);                       // special keyboard callback
+	//glutSpecialFunc(specialKeyboard);                       // special keyboard callback
 }
 
 static void initGLState() {
@@ -1405,7 +1405,7 @@ static void initScene() {
 	g_world->addChild(g_light2);
 
 	g_currentCameraNode = g_skyNode;
-	hairsSimulationCallback(1000);
+	//hairsSimulationCallback(1000);
 
 }
 
@@ -1438,7 +1438,7 @@ int main(int argc, char * argv[]) {
 		initGeometry();
 		initScene();
 		initAnimation();
-		initSimulation();
+		//initSimulation();
 
 
 		glutMainLoop();
