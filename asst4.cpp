@@ -120,10 +120,6 @@ static shared_ptr<SimpleGeometryPNX> g_bunnyGeometry;
 static vector<shared_ptr<SimpleGeometryPNX> > g_bunnyShellGeometries;
 static Mesh g_bunnyMesh;
 
-static shared_ptr<SimpleGeometryPN> g_waterGeometry;
-static Mesh g_waterMesh;
-static shared_ptr<SgRbtNode> g_waterNode;
-
 
 // New Scene node
 
@@ -134,8 +130,7 @@ g_blueDiffuseMat,
 g_bumpFloorMat,
 g_arcballMat,
 g_pickingMat,
-g_lightMat,
-g_waterMat;
+g_lightMat;
 
 static shared_ptr<Material> g_bunnyMat; // for the bunny
 static vector<shared_ptr<Material> > g_bunnyShellMats; // for bunny shells
@@ -507,56 +502,6 @@ static void initBunnyMeshes() {
 		g_bunnyShellGeometries[i].reset(new SimpleGeometryPNX());
 	}
 }
-
-static void initWater() {
-	g_bunnyMesh.load("water.mesh");
-	int facenum = g_bunnyMesh.getNumFaces();
-
-	vector<VertexPN> verts;
-	verts.reserve(facenum * 3);
-	// // set all vertices to zero for the entire geometry
-	// for (int i = 0; i < g_waterMesh.getNumVertices(); i++)
-	// 	g_waterMesh.getVertex(i).setNormal(Cvec3(0));
-
-	// // for each face - add the face norm to all the vertices 
-	// for (int z = 0; z < g_waterMesh.getNumFaces(); ++z)
-	// {
-	// 	Mesh::Face temp = g_waterMesh.getFace(z);
-	// 	Cvec3 facenorm = temp.getNormal();
-
-	// 	for (int n = 0; n < temp.getNumVertices(); ++n)
-	// 	{
-	// 		Mesh::Vertex oldvertex = temp.getVertex(n);
-	// 		oldvertex.setNormal(oldvertex.getNormal() + facenorm);
-	// 		temp.getVertex(n).setNormal((temp.getVertex(n).getNormal() + facenorm));
-	// 	}
-	// }
-
-	// for (int j = 0; j < g_waterMesh.getNumVertices(); j++) {
-	// 	Mesh::Vertex vertex = g_waterMesh.getVertex(j);
-	// 	Cvec3 n = vertex.getNormal();
-	// 	vertex.setNormal(n.normalize());
-	// }
-
-	// TODO: Initialize g_bunnyGeometry from g_bunnyMesh; see "mesh preparation"
-	// section of spec
-
-	for (int z = 0; z < g_waterMesh.getNumFaces(); ++z)
-	{
-		Mesh::Face temp = g_waterMesh.getFace(z);
-		for (int n = 0; n < temp.getNumVertices() - 2; ++n)
-		{
-			verts.push_back(VertexPN(temp.getVertex(n).getPosition(), temp.getVertex(n).getNormal()));
-			verts.push_back(VertexPN(temp.getVertex(n + 1).getPosition(), temp.getVertex(n + 1).getNormal()));
-			verts.push_back(VertexPN(temp.getVertex(n + 2).getPosition(), temp.getVertex(n + 2).getNormal()));
-		}
-	}
-
-	g_waterGeometry.reset(new SimpleGeometryPN());
-
-	g_waterGeometry->upload(&verts[0], facenum * 3);
-}
-
 
 static void initGround() {
 	int ibLen, vbLen;
@@ -1296,9 +1241,6 @@ static void initMaterials() {
 	g_pickingMat.reset(new Material("./shaders/basic-gl3.vshader", "./shaders/pick-gl3.fshader"));
 
 
-  	g_waterMat.reset(new Material(solid));
-  	g_waterMat->getUniforms().put("uColor", Cvec3f(0.27f, 0.82f, 0.35f));
-
 	//put it here!!
 	// bunny material
 	g_bunnyMat.reset(new Material("./shaders/basic-gl3.vshader", "./shaders/bunny-gl3.fshader"));
@@ -1341,7 +1283,6 @@ static void initGeometry() {
 	initSphere();
 	initRobots();
 	initBunnyMeshes();
-	initWater();
 }
 
 static void constructRobot(shared_ptr<SgTransformNode> base, shared_ptr<Material> material) {
@@ -1452,10 +1393,6 @@ static void initScene() {
 	g_light2->addChild(shared_ptr<MyShapeNode>(
 		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(0.5))));
 
-	g_waterNode.reset(new SgRbtNode(RigTForm()));
-  	g_waterNode->addChild(shared_ptr<MyShapeNode>(
-        new MyShapeNode(g_waterGeometry, g_waterMat, Cvec3(0, 0, 0))));
-
 	g_world->addChild(g_skyNode);
 	g_world->addChild(g_groundNode);
 	g_world->addChild(g_robot1Node);
@@ -1466,8 +1403,6 @@ static void initScene() {
 
 	g_world->addChild(g_light1);
 	g_world->addChild(g_light2);
-	g_world->addChild(g_waterNode);
-
 
 	g_currentCameraNode = g_skyNode;
 	hairsSimulationCallback(1000);
