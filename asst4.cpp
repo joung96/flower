@@ -41,6 +41,7 @@
 #include "scenegraph.h"
 #include "sgutils.h"
 #include "mesh.h"
+#include "particle.h"
 
 #include "asstcommon.h"
 #include "drawer.h"
@@ -1060,6 +1061,12 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 			g_playingAnimation = false;
 		}
 		break;
+	case 'r': 
+		weather = RAIN; 
+		break;
+	case 't': 
+		weather = SNOW; 
+		break;
 	}
 
 	// Sanity check that our g_curKeyFrameNum is in sync with the g_curKeyFrame
@@ -1438,8 +1445,17 @@ int main(int argc, char * argv[]) {
 		initGeometry();
 		initScene();
 		initAnimation();
-		//initSimulation();
 
+		  glutInitDisplayMode(GLUT_DEPTH | GLUT_RGB | GLUT_DOUBLE);
+		  glutInitWindowSize(WCX, WCY);
+		  glutCreateWindow("CMPS 161 - Final Project");
+
+		  initWeather();
+
+	  	glutDisplayFunc(drawScene);
+	  	glutReshapeFunc(reshapeParticles);
+	  	
+	  	glutIdleFunc(idle);
 
 		glutMainLoop();
 		return 0;

@@ -1,0 +1,85 @@
+particle_system Examples/Water/Rain
+{
+    material        Examples/Droplet
+    particle_width  100
+    particle_height 300
+    cull_each       true
+    quota           100
+    // Make common direction straight down (faster than self oriented)
+    billboard_type  oriented_common
+    common_direction 0 -1 0
+    
+    // Area emitter
+    emitter Box
+    {
+        angle           0
+        emission_rate   20
+        time_to_live    5
+        direction       0 -1 0
+        velocity      1000
+        colour_range_start  0.3 1 0.3
+        colour_range_end    0.7 1 0.7
+        width           3000
+        height          3000
+        depth           0
+    }
+
+    // Gravity
+    affector LinearForce
+    {
+        force_vector      0 -1000 0
+        force_application add
+    }
+
+}
+
+particle_system Examples/Snow
+{
+   quota   2000
+   material   Examples/Flare
+   particle_width   4
+   particle_height   4
+   cull_each   true
+   renderer   billboard
+   sorted   true
+   local_space   false
+   billboard_type   point
+
+   emitter Box
+   {
+      angle   0
+      colour   1 1 1 1
+      colour_range_start   1 1 1 1
+      colour_range_end   1 1 1 1
+      direction   0 -1 0
+      emission_rate   100
+      position   0 200 0
+      velocity   20
+      velocity_min   20
+      velocity_max   20
+      time_to_live   20
+      time_to_live_min   20
+      time_to_live_max   20
+      duration   0
+      duration_min   0
+      duration_max   0
+      repeat_delay   0
+      repeat_delay_min   0
+      repeat_delay_max   0
+      width   200
+      height   200
+      depth   1
+   }
+
+   affector DeflectorPlane
+   {
+      plane_point   0 0 0
+      plane_normal   0 1 0
+      bounce   0
+   }
+
+   affector DirectionRandomiser
+   {
+      randomness   10
+   }
+}
