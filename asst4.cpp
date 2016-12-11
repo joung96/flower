@@ -41,7 +41,7 @@
 #include "scenegraph.h"
 #include "sgutils.h"
 #include "mesh.h"
-#include "particle.h"
+//#include "particle.h"
 
 #include "asstcommon.h"
 #include "drawer.h"
@@ -128,9 +128,10 @@ static Mesh g_bunnyMesh;
 // --------- Materials
 static shared_ptr<Material> g_redDiffuseMat,
 g_blueDiffuseMat,
-g_bumpFloorMat,
 g_arcballMat,
 g_pickingMat,
+g_greenSolidMat,
+g_bumpFloorMat,
 g_lightMat;
 
 static shared_ptr<Material> g_bunnyMat; // for the bunny
@@ -293,7 +294,114 @@ static Animator g_animator;
 static Animator::KeyFrameIter g_curKeyFrame;
 static int g_curKeyFrameNum;
 
+typedef struct { 
+	bool usable; 
+	float lifespan; 
+	float decay; 
+
+	// float r; 
+	// float g; 
+	// float b; 
+
+	float x; 
+	float y; 
+	float z;  
+
+	float v; // velocity 
+	float g; //gravity
+} particles;  
+
+#define PARTICLES 1000
+particles particle_system[PARTICLES];
+
+float velocity = 0.0;
+
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
+
+// for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+// {
+//   //Process/log the error.
+// 	printf("ERROR: %s\n",
+// 			     file, line, gluErrorString(err));
+// }
+
+
+void initParticle(int i) {
+	particle_system[i].lifespan = 1.0; 
+	particle_system[i].decay = float(rand()%100)/1000.0f+0.003f;
+
+	// particle_system[i].r = .5; 
+	// particle_system[i].g = .5; 
+	// particle_system[i].b = 1.0; 
+	assert(glGetError() == GL_NO_ERROR);
+
+	particle_system[i].x = (float) (rand() % int((2 * g_groundSize)));
+	particle_system[i].y = 20.0; 
+	particle_system[i].z = - (float) (rand() % int((2 * g_groundSize)));
+
+	particle_system[i].v = velocity; 
+	particle_system[i].g = -1.0;  // straight down
+	assert(glGetError() == GL_NO_ERROR);
+}
+
+void initParticles(void) {
+	// glShadeModel(GL_SMOOTH);
+	// glClearColor(0.0, 0.0, 0.0, 0.0);
+	// glClearDepth(1.0);
+	glEnable(GL_DEPTH_TEST);
+
+	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+	{
+	  //Process/log the error.
+		printf("ERROR1: %s\n",gluErrorString(err));
+	}
+
+	for (int i = 0; i < PARTICLES; i++) {
+		initParticle(i);
+	}
+
+	assert(glGetError() == GL_NO_ERROR);
+}
+
+void drawRain(void) {
+	for (int i = 0; i < PARTICLES; i += 2) {
+		//glColorMaterial ( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
+		//glEnable ( GL_COLOR_MATERIAL );
+		glColor3f(0.5, 0.5, 1.0); 
+
+		for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		{
+		  //Process/log the error.
+			printf("ERROR2: %s\n",gluErrorString(err));
+		}
+
+		// rain streak 
+		glBegin(GL_LINES); 
+		glVertex3f(particle_system[i].x, particle_system[i].y, particle_system[i].z); 
+		glVertex3f(particle_system[i].x, particle_system[i].y + 0.5, particle_system[i].z);  
+		glEnd();  
+
+		
+		for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
+		{
+		  //Process/log the error.
+			printf("ERROR3: %s\n",gluErrorString(err));
+		}
+
+
+		particle_system[i].y += particle_system[i].v;  
+		particle_system[i].v += particle_system[i].g; 
+		particle_system[i].usable -= particle_system[i].decay; 
+		assert(glGetError() == GL_NO_ERROR);
+
+		if (particle_system[i].y <= g_groundY) {
+			initParticle(i);
+		}
+		assert(glGetError() == GL_NO_ERROR);
+	}
+}
+
+
 static VertexPN findvertex(Mesh::Vertex v, int layer) {
 	RigTForm bunny = inv(getPathAccumRbt(g_world, g_bunnyNode));
 	
@@ -625,6 +733,9 @@ static void drawStuff(bool picking) {
 	{
 		updateShellGeometry();
 	}
+
+	drawRain(); 
+
 	// if we are not translating, update arcball scale
 	if (!(g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton) || (g_mouseLClickButton && !g_mouseRClickButton && g_spaceDown)))
 		updateArcballScale();
@@ -1061,12 +1172,12 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 			g_playingAnimation = false;
 		}
 		break;
-	case 'r': 
-		weather = RAIN; 
-		break;
-	case 't': 
-		weather = SNOW; 
-		break;
+	// case 'r': 
+	// 	weather = RAIN; 
+	// 	break;
+	// case 't': 
+	// 	weather = SNOW; 
+	// 	break;
 	}
 
 	// Sanity check that our g_curKeyFrameNum is in sync with the g_curKeyFrame
@@ -1075,30 +1186,6 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 
 	glutPostRedisplay();
 }
-
-// static void specialKeyboard(const int key, const int x, const int y) {
-// 	switch (key) {
-// 	case GLUT_KEY_RIGHT:
-// 		g_furHeight *= 1.05;
-// 		cerr << "fur height = " << g_furHeight << std::endl;
-// 		break;
-// 	case GLUT_KEY_LEFT:
-// 		g_furHeight /= 1.05;
-// 		std::cerr << "fur height = " << g_furHeight << std::endl;
-// 		break;
-// 	case GLUT_KEY_UP:
-// 		g_hairyness *= 1.05;
-// 		cerr << "hairyness = " << g_hairyness << std::endl;
-// 		break;
-// 	case GLUT_KEY_DOWN:
-// 		g_hairyness /= 1.05;
-// 		cerr << "hairyness = " << g_hairyness << std::endl;
-// 		break;
-// 	}
-
-// 	hairsSimulationCallback(0);
-// 	glutPostRedisplay();
-// }
 
 static void initGlutState(int argc, char * argv[]) {
 	glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
@@ -1229,6 +1316,11 @@ static void initMaterials() {
 	// copy diffuse prototype and set blue color
 	g_blueDiffuseMat.reset(new Material(diffuse));
 	g_blueDiffuseMat->getUniforms().put("uColor", Cvec3f(0, 0, 1));
+
+
+	// copy solid prototype, and set to color white
+	g_greenSolidMat.reset(new Material(solid));
+	g_greenSolidMat->getUniforms().put("uColor", Cvec3f(0, 1, .2));
 
 	// normal mapping
 	g_bumpFloorMat.reset(new Material("./shaders/normal-gl3.vshader", "./shaders/normal-gl3.fshader"));
@@ -1371,7 +1463,7 @@ static void initScene() {
 
 	g_groundNode.reset(new SgRbtNode(RigTForm(Cvec3(0, g_groundY, 0))));
 	g_groundNode->addChild(shared_ptr<MyShapeNode>(
-		new MyShapeNode(g_ground, g_bumpFloorMat)));
+		new MyShapeNode(g_ground, g_greenSolidMat)));
 
 	// create a single transform node for both the bunny and the bunny shells
 	g_bunnyNode.reset(new SgRbtNode());
@@ -1445,17 +1537,16 @@ int main(int argc, char * argv[]) {
 		initGeometry();
 		initScene();
 		initAnimation();
-
-		  glutInitDisplayMode(GLUT_DEPTH | GLUT_RGB | GLUT_DOUBLE);
-		  glutInitWindowSize(WCX, WCY);
-		  glutCreateWindow("CMPS 161 - Final Project");
-
-		  initWeather();
-
-	  	glutDisplayFunc(drawScene);
-	  	glutReshapeFunc(reshapeParticles);
-	  	
-	  	glutIdleFunc(idle);
+	  // glutInitDisplayMode(GLUT_DEPTH | GLUT_RGB | GLUT_DOUBLE);
+	  // glutInitWindowSize(WCX, WCY);
+	  // glutCreateWindow("CS175 - Final Project");
+		initParticles(); 
+		assert(glGetError() == GL_NO_ERROR);
+	  // initWeather();
+	  // glutDisplayFunc(drawScene);
+	  // glutReshapeFunc(reshapeParticles);
+	  // glutKeyboardFunc(weather_keys);
+	  // glutIdleFunc(idle);
 
 		glutMainLoop();
 		return 0;

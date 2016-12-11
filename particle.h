@@ -29,12 +29,8 @@ float hailsize = 0.1;
 int weather;
 
 //floor colors
-float r = 0.0;
-float g = 1.0;
-float b = 0.0;
 float ground_points[21][21][3];
 float ground_colors[21][21][4];
-float accum = -10.0;
 
 typedef struct {
   // Life
@@ -57,6 +53,18 @@ typedef struct {
 
 // Paticle System
 particles par_sys[MAX_PARTICLES];
+
+void weather_keys(unsigned char key, int x, int y) {
+  if (key == 'r') { // Rain
+    weather = RAIN;
+    glutPostRedisplay();
+  }
+  if (key == 's') { // Snow
+    weather = SNOW;
+    glutPostRedisplay();
+  }
+}
+
 
 
 // Initialize/Reset Particles - give them their attributes
@@ -89,13 +97,13 @@ void initWeather( ) {
     for (int z = 0; z < 21; z++) {
       for (int x = 0; x < 21; x++) {
         ground_points[x][z][0] = x - 10.0;
-        ground_points[x][z][1] = accum;
+        ground_points[x][z][1] = -10.0;
         ground_points[x][z][2] = z - 10.0;
 
-        ground_colors[z][x][0] = r; // red value
-        ground_colors[z][x][1] = g; // green value
-        ground_colors[z][x][2] = b; // blue value
-        ground_colors[z][x][3] = 0.0; // acummulation factor
+        ground_colors[z][x][0] = 0.0; 
+        ground_colors[z][x][1] = 1.0; 
+        ground_colors[z][x][2] = 0.0;
+        ground_colors[z][x][3] = 0.0; 
       }
     }
 
@@ -107,12 +115,11 @@ void initWeather( ) {
 
 // For Rain
 void drawRain() {
-  float x, y, z;
   for (int loop = 0; loop < MAX_PARTICLES; loop=loop+2) {
     if (par_sys[loop].alive == true) {
-      x = par_sys[loop].xpos;
-      y = par_sys[loop].ypos;
-      z = par_sys[loop].zpos + zoom;
+      float x = par_sys[loop].xpos;
+      float y = par_sys[loop].ypos;
+      float z = par_sys[loop].zpos + zoom;
 
       // Draw particles
       glColor3f(0.5, 0.5, 1.0);
@@ -184,6 +191,7 @@ void drawSnow() {
 
 // Draw Particles
 void drawScene( ) {
+  float x, y, z;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glMatrixMode(GL_MODELVIEW);
@@ -195,7 +203,7 @@ void drawScene( ) {
   glRotatef(tilt, 1.0, 0.0, 0.0);
 
   // GROUND?!
-  glColor3f(r, g, b);
+  glColor3f(0.0, 1.0, 0.0);
   glBegin(GL_QUADS);
     // along z - y const
     for (int i = -10; i+1 < 11; i++) {
