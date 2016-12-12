@@ -41,13 +41,15 @@
 #include "scenegraph.h"
 #include "sgutils.h"
 #include "mesh.h"
-//#include "particle.h"
+#include <math.h>    
 
 #include "asstcommon.h"
 #include "drawer.h"
 #include "picker.h"
 
 #define EMBED_SOLUTION_GLSL 1
+#define PI 3.14159265
+
 using namespace std;
 using namespace tr1;
 
@@ -310,6 +312,7 @@ typedef struct {
 #define PARTICLES 3000
 particles particle_system[PARTICLES];
 int neg = 1;
+shared_ptr<MyShapeNode> sun;
 
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
@@ -405,6 +408,22 @@ void drawRain(void) {
 			}
 		}
 	}
+}
+
+double tick = 0.0; 
+void drawSun(void) {
+	g_world->removeChild(sun); 
+
+	shared_ptr<MyShapeNode> shape(
+				new MyShapeNode(g_sphere,
+					g_lightMat,
+					Cvec3((1 + g_groundSize) * sin(tick), (1 + g_groundSize) * cos(tick), -4.0),
+					Cvec3(0, 0, 0),
+					Cvec3(2.0)));
+	sun = shape;
+	g_world->addChild(sun); 
+	tick += 0.001;
+
 }
 
 
@@ -741,7 +760,7 @@ static void drawStuff(bool picking) {
 	}
 
 	drawRain(); 
-
+	drawSun();
 	// if we are not translating, update arcball scale
 	if (!(g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton) || (g_mouseLClickButton && !g_mouseRClickButton && g_spaceDown)))
 		updateArcballScale();
@@ -1477,7 +1496,7 @@ static void initScene() {
 	g_world.reset(new SgRootNode());
 
 
-	g_skyNode.reset(new SgRbtNode(RigTForm(Cvec3(0.0, 0.50, 5.0))));
+	g_skyNode.reset(new SgRbtNode(RigTForm(Cvec3(0.0, 2.0, 10.0))));
 
 	g_groundNode.reset(new SgRbtNode(RigTForm(Cvec3(0, g_groundY, 0))));
 	g_groundNode->addChild(shared_ptr<MyShapeNode>(
@@ -1503,12 +1522,22 @@ static void initScene() {
 	constructRobot(g_robot2Node, g_blueDiffuseMat); // a Blue robot
 
 	g_light1.reset(new SgRbtNode(RigTForm(Cvec3(4.0, 8.0, 5.0))));
-	g_light2.reset(new SgRbtNode(RigTForm(Cvec3(0, 5.0, -4.0))));
+	g_light2.reset(new SgRbtNode(RigTForm(Cvec3(4.0, 8.0, 5.0))));
 	g_light1->addChild(shared_ptr<MyShapeNode>(
 		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(0.5))));
-
 	g_light2->addChild(shared_ptr<MyShapeNode>(
-		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(1))));
+		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(0.5))));
+
+	shared_ptr<MyShapeNode> shape(
+				new MyShapeNode(g_sphere,
+					g_lightMat,
+					Cvec3(g_groundSize, -2.0, -4.0),
+					Cvec3(0, 0, 0),
+					Cvec3(1.0)));
+
+	sun = shape;
+
+	g_world->addChild(sun);
 
 	g_world->addChild(g_skyNode);
 	g_world->addChild(g_groundNode);
@@ -1516,13 +1545,10 @@ static void initScene() {
 	g_world->addChild(g_robot2Node);
 	g_world->addChild(g_bunnyNode);
 
-	//g_world->addChild(g_bunnyNode);
-
 	g_world->addChild(g_light1);
 	g_world->addChild(g_light2);
 
 	g_currentCameraNode = g_skyNode;
-	//hairsSimulationCallback(1000);
 
 }
 
