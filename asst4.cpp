@@ -135,6 +135,7 @@ g_arcballMat,
 g_pickingMat,
 g_greenSolidMat,
 g_bumpFloorMat,
+g_sunMat,
 g_lightMat;
 
 static shared_ptr<Material> g_bunnyMat; // for the bunny
@@ -151,7 +152,7 @@ static shared_ptr<Geometry> g_ground, g_cube, g_sphere;
 // --------- Scene
 
 static shared_ptr<SgRootNode> g_world;
-static shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node, g_light1, g_light2;
+static shared_ptr<SgRbtNode> g_skyNode, g_groundNode, g_robot1Node, g_robot2Node, g_light1, g_sun;
 static shared_ptr<SgRbtNode> g_bunnyNode;
 
 
@@ -312,8 +313,8 @@ typedef struct {
 #define PARTICLES 3000
 particles particle_system[PARTICLES];
 int neg = 1;
-shared_ptr<MyShapeNode> sun;
 
+shared_ptr<MyShapeNode> sun;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
@@ -328,8 +329,9 @@ void initParticle(int i) {
 		neg = 1;
 	}
 
-	particle_system[i].y = 20.0; 
-	particle_system[i].z = - static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize))) ;
+	particle_system[i].y = 20.0;
+
+	particle_system[i].z = - 2 * static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize)))  + g_groundSize;
 
 	particle_system[i].v = rand() % 100 / 100; 
 
@@ -412,16 +414,14 @@ void drawRain(void) {
 
 double tick = 0.0; 
 void drawSun(void) {
-	g_world->removeChild(sun); 
+	g_sun->removeChild(sun);
 
 	shared_ptr<MyShapeNode> shape(
-				new MyShapeNode(g_sphere,
-					g_lightMat,
-					Cvec3((1 + g_groundSize) * sin(tick), (1 + g_groundSize) * cos(tick), -4.0),
-					Cvec3(0, 0, 0),
-					Cvec3(2.0)));
+		new MyShapeNode(g_sphere, g_sunMat, Cvec3((g_groundSize + 5) * sin(- tick) - g_groundSize, (g_groundSize + 5) * cos(tick), -4.0), Cvec3(0.0), Cvec3(2.0)));
+
 	sun = shape;
-	g_world->addChild(sun); 
+
+	g_sun->addChild(sun);
 	tick += 0.001;
 
 }
@@ -522,18 +522,6 @@ static void hairsSimulationCallback(int dontCare) {
 	g_shellNeedsUpdate = true;
 	glutPostRedisplay(); // signal redisplaying
 }
-
-// New function that initialize the dynamics simulation
-// static void initSimulation() {
-// 	g_tipPos.resize(g_bunnyMesh.getNumVertices(), Cvec3(0));
-// 	g_tipVelocity = g_tipPos;
-
-// 	// TASK 1 TODO: initialize g_tipPos to "at-rest" hair tips in world coordinates
-
-// 	// Starts hair tip simulation
-// 	updateShellGeometry();
-// 	hairsSimulationCallback(0);
-// }
 
 static void initSimulation() {
 	g_tipPos.resize(g_bunnyMesh.getNumVertices(), Cvec3(0));
@@ -775,7 +763,7 @@ static void drawStuff(bool picking) {
 	const RigTForm invEyeRbt = inv(eyeRbt);
 
 	Cvec3 l1 = getPathAccumRbt(g_world, g_light1).getTranslation();
-	Cvec3 l2 = getPathAccumRbt(g_world, g_light2).getTranslation();
+	Cvec3 l2 = getPathAccumRbt(g_world, g_sun).getTranslation();
 	uniforms.put("uLight", Cvec3(invEyeRbt * Cvec4(l1, 1)));
 	uniforms.put("uLight2", Cvec3(invEyeRbt * Cvec4(l2, 1)));
 
@@ -1233,7 +1221,7 @@ static void initGlutState(int argc, char * argv[]) {
 #endif
 
 	glutInitWindowSize(g_windowWidth, g_windowHeight);      // create a window
-	glutCreateWindow("Assignment 8.5");                     // title the window
+	glutCreateWindow("Final Project");                     // title the window
 
 	glutDisplayFunc(display);                               // display rendering callback
 	glutReshapeFunc(reshape);                               // window reshape callback
@@ -1354,6 +1342,9 @@ static void initMaterials() {
 	g_blueDiffuseMat.reset(new Material(diffuse));
 	g_blueDiffuseMat->getUniforms().put("uColor", Cvec3f(0, 0, 1));
 
+	// copy diffuse prototype and set yellow color
+	g_sunMat.reset(new Material(solid));
+	g_sunMat->getUniforms().put("uColor", Cvec3f(1, 1, 0));
 
 	// copy solid prototype, and set to color white
 	g_greenSolidMat.reset(new Material(solid));
@@ -1522,22 +1513,17 @@ static void initScene() {
 	constructRobot(g_robot2Node, g_blueDiffuseMat); // a Blue robot
 
 	g_light1.reset(new SgRbtNode(RigTForm(Cvec3(4.0, 8.0, 5.0))));
-	g_light2.reset(new SgRbtNode(RigTForm(Cvec3(4.0, 8.0, 5.0))));
+	g_sun.reset(new SgRbtNode(RigTForm(Cvec3(g_groundSize, -2.0, -4.0))));
+
 	g_light1->addChild(shared_ptr<MyShapeNode>(
 		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(0.5))));
-	g_light2->addChild(shared_ptr<MyShapeNode>(
-		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(0.5))));
 
-	shared_ptr<MyShapeNode> shape(
-				new MyShapeNode(g_sphere,
-					g_lightMat,
-					Cvec3(g_groundSize, -2.0, -4.0),
-					Cvec3(0, 0, 0),
-					Cvec3(1.0)));
+	sun = shared_ptr<MyShapeNode>(
+		new MyShapeNode(g_sphere, g_sunMat, Cvec3(0), Cvec3(0), Cvec3(2.0)));
+	g_sun->addChild(sun);
 
-	sun = shape;
 
-	g_world->addChild(sun);
+	g_world->addChild(g_sun);
 
 	g_world->addChild(g_skyNode);
 	g_world->addChild(g_groundNode);
@@ -1546,7 +1532,6 @@ static void initScene() {
 	g_world->addChild(g_bunnyNode);
 
 	g_world->addChild(g_light1);
-	g_world->addChild(g_light2);
 
 	g_currentCameraNode = g_skyNode;
 
