@@ -48,7 +48,6 @@
 #include "picker.h"
 
 #define EMBED_SOLUTION_GLSL 1
-
 using namespace std;
 using namespace tr1;
 
@@ -79,6 +78,7 @@ static const float g_groundY = -2.0;      // y coordinate of the ground
 static const float g_groundSize = 10.0;   // half the ground length
 
 enum SkyMode { WORLD_SKY = 0, SKY_SKY = 1 };
+enum Weather { CLEAR = 0, RAIN = 1, SNOW = 2};
 
 static int g_windowWidth = 1300;
 static int g_windowHeight = 512;
@@ -89,6 +89,7 @@ static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
 static int g_activeShader = 0;
 
 static SkyMode g_activeCameraFrame = WORLD_SKY;
+static Weather weather = CLEAR;
 
 static bool g_displayArcball = true;
 static double g_arcballScreenRadius = 100; // number of pixels
@@ -301,35 +302,40 @@ typedef struct {
 	float z;  
 
 	float v; // velocity 
-	float g; //gravity
 
 	shared_ptr<MyShapeNode> node;
 
 } particles;  
 
-#define PARTICLES 1000
+#define PARTICLES 3000
 particles particle_system[PARTICLES];
+int neg = 1;
 
-float velocity = 0.0;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
 
 void initParticle(int i) {
+	if (neg) {
+		particle_system[i].x = - static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize))) ;
+		neg = 0;
+	}
+	else {
+		particle_system[i].x = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize))) ;
+		neg = 1;
+	}
 
-	particle_system[i].x = (float) (rand() % int((2 * g_groundSize))) - g_groundSize;
 	particle_system[i].y = 20.0; 
-	particle_system[i].z = - (float) (rand() % int((2 * g_groundSize))) + g_groundSize;
+	particle_system[i].z = - static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize))) ;
 
-	particle_system[i].v = rand() % 100 / 100.;  
-	particle_system[i].g = 1.0;  // straight down
+	particle_system[i].v = rand() % 100 / 100; 
 
 	shared_ptr<MyShapeNode> shape(
 						new MyShapeNode(g_sphere,
 							g_blueDiffuseMat,
 							Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
 							Cvec3(0, 0, 0),
-							Cvec3(.05, .1, .05)));
+							Cvec3(.01, .2, .01)));
 
 	particle_system[i].node = shape; 
 
@@ -344,24 +350,59 @@ void initParticles(void) {
 }
 
 void drawRain(void) {
-	for (int i = 0; i < PARTICLES; i += 2) {
-		g_world->removeChild(particle_system[i].node);
+	if (weather != CLEAR) {
+		for (int i = 0; i < PARTICLES; i += 20) {
+			g_world->removeChild(particle_system[i].node);
 
-		shared_ptr<MyShapeNode> shape(
-						new MyShapeNode(g_sphere,
-							g_blueDiffuseMat,
-							Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
-							Cvec3(0, 0, 0),
-							Cvec3(.02, .02, .02)));
+			if (weather == SNOW) {
+				particle_system[i].v = rand() % 1000 / 10000.; 
+				shared_ptr<MyShapeNode> shape(
+							new MyShapeNode(g_sphere,
+								g_lightMat,
+								Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
+								Cvec3(0, 0, 0),
+								Cvec3(.1, .1, .1)));
 
-		g_world->addChild(shape);
-		particle_system[i].node = shape;
+				g_world->addChild(shape);
+				particle_system[i].node = shape;
+			}
+			else {
+				particle_system[i].v = rand() % 1000 / 1000.; 
+				shared_ptr<MyShapeNode> shape(
+							new MyShapeNode(g_sphere,
+								g_blueDiffuseMat,
+								Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
+								Cvec3(0, 0, 0),
+								Cvec3(.01, .2, .01)));
 
-		particle_system[i].y -= particle_system[i].v;
+				g_world->addChild(shape);
+				particle_system[i].node = shape;
+			}
 
 
-		if (particle_system[i].y <= -10.0) {
-			initParticle(i);
+			particle_system[i].y -= particle_system[i].v;
+
+
+			float stop; 
+			if (weather == RAIN) 
+				stop = g_groundY - 1.5;
+			else 
+				stop = g_groundY -.2;
+
+			if (particle_system[i].y <= stop) {
+				if (weather == SNOW) {
+					shared_ptr<MyShapeNode> shape(
+							new MyShapeNode(g_sphere,
+								g_lightMat,
+								Cvec3(particle_system[i].x, g_groundY, particle_system[i].z),
+								Cvec3(0, 0, 0),
+								Cvec3(.1, .000001, .1)));
+
+					g_world->addChild(shape);
+				}
+
+				initParticle(i);
+			}
 		}
 	}
 }
@@ -1137,12 +1178,20 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 			g_playingAnimation = false;
 		}
 		break;
-	// case 'r': 
-	// 	weather = RAIN; 
-	// 	break;
-	// case 't': 
-	// 	weather = SNOW; 
-	// 	break;
+	 case 'r': 
+	 	weather = Weather((weather + 1) % 3);
+	 	if (weather == RAIN) {
+	 		initParticles();
+	 		cerr << "weather forecast is rainy\n" << endl;
+	 	}
+	 	else if (weather == SNOW)
+	 		cerr << "weather forecast is snowy\n" << endl;
+	 	else {
+	 		for (int i = 0; i < PARTICLES; i++) 
+	 			g_world->removeChild(particle_system[i].node);
+	 		cerr << "weather forecast is clear\n" << endl;
+	 	}
+	 	break;
 	}
 
 	// Sanity check that our g_curKeyFrameNum is in sync with the g_curKeyFrame
@@ -1428,7 +1477,7 @@ static void initScene() {
 	g_world.reset(new SgRootNode());
 
 
-	g_skyNode.reset(new SgRbtNode(RigTForm(Cvec3(0.0, 0.25, 4.0))));
+	g_skyNode.reset(new SgRbtNode(RigTForm(Cvec3(0.0, 0.50, 5.0))));
 
 	g_groundNode.reset(new SgRbtNode(RigTForm(Cvec3(0, g_groundY, 0))));
 	g_groundNode->addChild(shared_ptr<MyShapeNode>(
@@ -1453,13 +1502,13 @@ static void initScene() {
 	constructRobot(g_robot1Node, g_redDiffuseMat); // a Red robot
 	constructRobot(g_robot2Node, g_blueDiffuseMat); // a Blue robot
 
-	g_light1.reset(new SgRbtNode(RigTForm(Cvec3(4.0, 3.0, 5.0))));
-	g_light2.reset(new SgRbtNode(RigTForm(Cvec3(-4, 1.0, -4.0))));
+	g_light1.reset(new SgRbtNode(RigTForm(Cvec3(4.0, 8.0, 5.0))));
+	g_light2.reset(new SgRbtNode(RigTForm(Cvec3(0, 5.0, -4.0))));
 	g_light1->addChild(shared_ptr<MyShapeNode>(
 		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(0.5))));
 
 	g_light2->addChild(shared_ptr<MyShapeNode>(
-		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(0.5))));
+		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(1))));
 
 	g_world->addChild(g_skyNode);
 	g_world->addChild(g_groundNode);
@@ -1506,17 +1555,7 @@ int main(int argc, char * argv[]) {
 		initGeometry();
 		initScene();
 		initAnimation();
-	  // glutInitDisplayMode(GLUT_DEPTH | GLUT_RGB | GLUT_DOUBLE);
-	  // glutInitWindowSize(WCX, WCY);
-	  // glutCreateWindow("CS175 - Final Project");
 		initParticles(); 
-		assert(glGetError() == GL_NO_ERROR);
-	  // initWeather();
-	  // glutDisplayFunc(drawScene);
-	  // glutReshapeFunc(reshapeParticles);
-	  // glutKeyboardFunc(weather_keys);
-	  // glutIdleFunc(idle);
-
 		glutMainLoop();
 		return 0;
 	}
