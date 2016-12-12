@@ -80,7 +80,7 @@ static const float g_groundSize = 10.0;   // half the ground length
 
 enum SkyMode { WORLD_SKY = 0, SKY_SKY = 1 };
 
-static int g_windowWidth = 512;
+static int g_windowWidth = 1300;
 static int g_windowHeight = 512;
 static bool g_mouseClickDown = false;    // is the mouse button pressed
 static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
@@ -295,13 +295,6 @@ static Animator::KeyFrameIter g_curKeyFrame;
 static int g_curKeyFrameNum;
 
 typedef struct { 
-	bool usable; 
-	float lifespan; 
-	float decay; 
-
-	// float r; 
-	// float g; 
-	// float b; 
 
 	float x; 
 	float y; 
@@ -309,6 +302,9 @@ typedef struct {
 
 	float v; // velocity 
 	float g; //gravity
+
+	shared_ptr<MyShapeNode> node;
+
 } particles;  
 
 #define PARTICLES 1000
@@ -318,86 +314,55 @@ float velocity = 0.0;
 
 ///////////////// END OF G L O B A L S //////////////////////////////////////////////////
 
-// for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
-// {
-//   //Process/log the error.
-// 	printf("ERROR: %s\n",
-// 			     file, line, gluErrorString(err));
-// }
-
 
 void initParticle(int i) {
-	particle_system[i].lifespan = 1.0; 
-	particle_system[i].decay = float(rand()%100)/1000.0f+0.003f;
 
-	// particle_system[i].r = .5; 
-	// particle_system[i].g = .5; 
-	// particle_system[i].b = 1.0; 
-	assert(glGetError() == GL_NO_ERROR);
-
-	particle_system[i].x = (float) (rand() % int((2 * g_groundSize)));
+	particle_system[i].x = (float) (rand() % int((2 * g_groundSize))) - g_groundSize;
 	particle_system[i].y = 20.0; 
-	particle_system[i].z = - (float) (rand() % int((2 * g_groundSize)));
+	particle_system[i].z = - (float) (rand() % int((2 * g_groundSize))) + g_groundSize;
 
-	particle_system[i].v = velocity; 
-	particle_system[i].g = -1.0;  // straight down
-	assert(glGetError() == GL_NO_ERROR);
+	particle_system[i].v = rand() % 100 / 100.;  
+	particle_system[i].g = 1.0;  // straight down
+
+	shared_ptr<MyShapeNode> shape(
+						new MyShapeNode(g_sphere,
+							g_blueDiffuseMat,
+							Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
+							Cvec3(0, 0, 0),
+							Cvec3(.05, .1, .05)));
+
+	particle_system[i].node = shape; 
+
+	g_world->addChild(shape);
 }
 
 void initParticles(void) {
-	// glShadeModel(GL_SMOOTH);
-	// glClearColor(0.0, 0.0, 0.0, 0.0);
-	// glClearDepth(1.0);
 	glEnable(GL_DEPTH_TEST);
-
-	for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
-	{
-	  //Process/log the error.
-		printf("ERROR1: %s\n",gluErrorString(err));
-	}
-
 	for (int i = 0; i < PARTICLES; i++) {
 		initParticle(i);
 	}
-
-	assert(glGetError() == GL_NO_ERROR);
 }
 
 void drawRain(void) {
 	for (int i = 0; i < PARTICLES; i += 2) {
-		//glColorMaterial ( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
-		//glEnable ( GL_COLOR_MATERIAL );
-		glColor3f(0.5, 0.5, 1.0); 
+		g_world->removeChild(particle_system[i].node);
 
-		for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
-		{
-		  //Process/log the error.
-			printf("ERROR2: %s\n",gluErrorString(err));
-		}
+		shared_ptr<MyShapeNode> shape(
+						new MyShapeNode(g_sphere,
+							g_blueDiffuseMat,
+							Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
+							Cvec3(0, 0, 0),
+							Cvec3(.02, .02, .02)));
 
-		// rain streak 
-		glBegin(GL_LINES); 
-		glVertex3f(particle_system[i].x, particle_system[i].y, particle_system[i].z); 
-		glVertex3f(particle_system[i].x, particle_system[i].y + 0.5, particle_system[i].z);  
-		glEnd();  
+		g_world->addChild(shape);
+		particle_system[i].node = shape;
 
-		
-		for(GLenum err; (err = glGetError()) != GL_NO_ERROR;)
-		{
-		  //Process/log the error.
-			printf("ERROR3: %s\n",gluErrorString(err));
-		}
+		particle_system[i].y -= particle_system[i].v;
 
 
-		particle_system[i].y += particle_system[i].v;  
-		particle_system[i].v += particle_system[i].g; 
-		particle_system[i].usable -= particle_system[i].decay; 
-		assert(glGetError() == GL_NO_ERROR);
-
-		if (particle_system[i].y <= g_groundY) {
+		if (particle_system[i].y <= -10.0) {
 			initParticle(i);
 		}
-		assert(glGetError() == GL_NO_ERROR);
 	}
 }
 
@@ -1187,6 +1152,10 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 	glutPostRedisplay();
 }
 
+void idle(void) {
+	glutPostRedisplay();
+}
+
 static void initGlutState(int argc, char * argv[]) {
 	glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
 #ifdef __MAC__
@@ -1204,7 +1173,7 @@ static void initGlutState(int argc, char * argv[]) {
 	glutMouseFunc(mouse);                                   // mouse click callback
 	glutKeyboardFunc(keyboard);
 	glutKeyboardUpFunc(keyboardUp);
-	//glutSpecialFunc(specialKeyboard);                       // special keyboard callback
+	glutIdleFunc(idle);	
 }
 
 static void initGLState() {
