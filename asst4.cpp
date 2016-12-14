@@ -340,7 +340,7 @@ void initParticle(int i) {
 							g_blueDiffuseMat,
 							Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
 							Cvec3(0, 0, 0),
-							Cvec3(.01, .2, .01)));
+							Cvec3(.00001, .00001, .00001)));
 
 	particle_system[i].node = shape; 
 
@@ -412,16 +412,21 @@ void drawRain(void) {
 	}
 }
 
+
+
 double tick = 0.0; 
 void drawSun(void) {
+	g_world->removeChild(g_sun);
 	g_sun->removeChild(sun);
 
 	shared_ptr<MyShapeNode> shape(
-		new MyShapeNode(g_sphere, g_sunMat, Cvec3((g_groundSize + 5) * sin(- tick) - g_groundSize, (g_groundSize + 5) * cos(tick), -4.0), Cvec3(0.0), Cvec3(2.0)));
+		new MyShapeNode(g_sphere, g_sunMat, Cvec3((g_groundSize + 5) * sin(- tick) - g_groundSize, 
+			(g_groundSize + 5) * cos(tick), -4.0), Cvec3(0.0), Cvec3(2.0)));
 
 	sun = shape;
 
 	g_sun->addChild(sun);
+	g_world->addChild(g_sun);
 	tick += 0.001;
 
 }
@@ -749,6 +754,7 @@ static void drawStuff(bool picking) {
 
 	drawRain(); 
 	drawSun();
+	
 	// if we are not translating, update arcball scale
 	if (!(g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton) || (g_mouseLClickButton && !g_mouseRClickButton && g_spaceDown)))
 		updateArcballScale();
@@ -762,10 +768,11 @@ static void drawStuff(bool picking) {
 	const RigTForm eyeRbt = getPathAccumRbt(g_world, g_currentCameraNode);
 	const RigTForm invEyeRbt = inv(eyeRbt);
 
-	Cvec3 l1 = getPathAccumRbt(g_world, g_light1).getTranslation();
+	Cvec3 l1 = getPathAccumRbt(g_world, g_sun).getTranslation();
 	Cvec3 l2 = getPathAccumRbt(g_world, g_sun).getTranslation();
 	uniforms.put("uLight", Cvec3(invEyeRbt * Cvec4(l1, 1)));
 	uniforms.put("uLight2", Cvec3(invEyeRbt * Cvec4(l2, 1)));
+
 
 	if (!picking) {
 		Drawer drawer(invEyeRbt, uniforms);
@@ -796,6 +803,7 @@ static void display() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	drawStuff(false);
+
 
 	glutSwapBuffers();
 
@@ -1512,11 +1520,11 @@ static void initScene() {
 	constructRobot(g_robot1Node, g_redDiffuseMat); // a Red robot
 	constructRobot(g_robot2Node, g_blueDiffuseMat); // a Blue robot
 
-	g_light1.reset(new SgRbtNode(RigTForm(Cvec3(4.0, 8.0, 5.0))));
-	g_sun.reset(new SgRbtNode(RigTForm(Cvec3(g_groundSize, -2.0, -4.0))));
+	//g_light1.reset(new SgRbtNode(RigTForm(Cvec3(4.0, 8.0, 5.0))));
+	g_sun.reset(new SgRbtNode(RigTForm(Cvec3(g_groundSize, -2.0, 0.0))));
 
-	g_light1->addChild(shared_ptr<MyShapeNode>(
-		new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(0.5))));
+	//g_light1->addChild(shared_ptr<MyShapeNode>(
+	//	new MyShapeNode(g_sphere, g_lightMat, Cvec3(0), Cvec3(0), Cvec3(0.5))));
 
 	sun = shared_ptr<MyShapeNode>(
 		new MyShapeNode(g_sphere, g_sunMat, Cvec3(0), Cvec3(0), Cvec3(2.0)));
@@ -1531,7 +1539,7 @@ static void initScene() {
 	g_world->addChild(g_robot2Node);
 	g_world->addChild(g_bunnyNode);
 
-	g_world->addChild(g_light1);
+	//g_world->addChild(g_light1);
 
 	g_currentCameraNode = g_skyNode;
 
