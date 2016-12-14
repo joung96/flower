@@ -419,9 +419,11 @@ void drawSun(void) {
 	g_world->removeChild(g_sun);
 	g_sun->removeChild(sun);
 
+	Cvec3 newPos = Cvec3((g_groundSize + 5) * sin(- tick) - g_groundSize, (g_groundSize + 5) * cos(tick), -4.0);
+	g_sun.reset(new SgRbtNode(RigTForm(newPos)));
+
 	shared_ptr<MyShapeNode> shape(
-		new MyShapeNode(g_sphere, g_sunMat, Cvec3((g_groundSize + 5) * sin(- tick) - g_groundSize, 
-			(g_groundSize + 5) * cos(tick), -4.0), Cvec3(0.0), Cvec3(2.0)));
+		new MyShapeNode(g_sphere, g_sunMat, newPos, Cvec3(0.0), Cvec3(2.0)));
 
 	sun = shape;
 
