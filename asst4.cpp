@@ -416,6 +416,7 @@ void drawRain(void) {
 
 double tick = 0.0; 
 void drawSun(void) {
+
 	g_world->removeChild(g_sun);
 	g_sun->removeChild(sun);
 
