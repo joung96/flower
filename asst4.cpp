@@ -1,7 +1,3 @@
-
-
-
-
 ////////////////////////////////////////////////////////////////////////
 //
 //   Harvard University
@@ -18,6 +14,10 @@
 #include <map>
 #include <fstream>
 #include <stdexcept>
+#include <stdio.h> 
+#include <stdlib.h>
+#include <sstream> 
+
 #if __GNUG__
 #   include <tr1/memory>
 #endif
@@ -50,6 +50,8 @@
 #define EMBED_SOLUTION_GLSL 1
 #define PI 3.14159265
 
+#define vstr(s) str(s) 
+#define str(s)
 using namespace std;
 using namespace tr1;
 
@@ -92,6 +94,7 @@ static int g_activeShader = 0;
 
 static SkyMode g_activeCameraFrame = WORLD_SKY;
 static Weather weather = CLEAR;
+int splashing = 0;
 
 static bool g_displayArcball = true;
 static double g_arcballScreenRadius = 100; // number of pixels
@@ -136,6 +139,7 @@ g_pickingMat,
 g_greenSolidMat,
 g_bumpFloorMat,
 g_sunMat,
+g_stormMat,
 g_lightMat;
 
 static shared_ptr<Material> g_bunnyMat; // for the bunny
@@ -305,13 +309,31 @@ typedef struct {
 	float z;  
 
 	float v; // velocity 
+	float splashx;
 
 	shared_ptr<MyShapeNode> node;
 
-} particles;  
+} particles;
+
+typedef struct { 
+	float x; 
+	float y; 
+	float z;  
+
+	float v; // velocity 
+	shared_ptr<MyShapeNode> ball1;
+	shared_ptr<MyShapeNode> ball2;
+	shared_ptr<MyShapeNode> ball3;
+	shared_ptr<MyShapeNode> ball4;
+} clouds;
+
 
 #define PARTICLES 3000
+#define CLOUDS 20 
+
 particles particle_system[PARTICLES];
+clouds cloud_system[CLOUDS];
+
 int neg = 1;
 
 shared_ptr<MyShapeNode> sun;
@@ -354,64 +376,214 @@ void initParticles(void) {
 	}
 }
 
+void drawSplash(int i) {
+	particle_system[i].y = pow((double) (particle_system[i].x -  particle_system[i].splashx), (double) 2.0) + .5;
+	particle_system[i].x += .01;
+
+	shared_ptr<MyShapeNode> shape(
+			new MyShapeNode(g_sphere,
+				g_blueDiffuseMat,
+				Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
+				Cvec3(0, 0, 0),
+				Cvec3(.01, .2, .01)));
+
+	g_world->addChild(shape);
+
+	if (particle_system[i].x == particle_system[i].splashx + .5) {
+		g_world->removeChild(particle_system[i].node); 
+		splashing = 0;
+		initParticle(i);
+	}
+}
+
 void drawRain(void) {
 	if (weather != CLEAR) {
 		for (int i = 0; i < PARTICLES; i += 20) {
 			g_world->removeChild(particle_system[i].node);
 
-			if (weather == SNOW) {
-				particle_system[i].v = rand() % 1000 / 10000.; 
-				shared_ptr<MyShapeNode> shape(
-							new MyShapeNode(g_sphere,
-								g_lightMat,
-								Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
-								Cvec3(0, 0, 0),
-								Cvec3(.1, .1, .1)));
-
-				g_world->addChild(shape);
-				particle_system[i].node = shape;
-			}
+			if (splashing)
+				drawSplash(i);
 			else {
-				particle_system[i].v = rand() % 1000 / 1000.; 
-				shared_ptr<MyShapeNode> shape(
-							new MyShapeNode(g_sphere,
-								g_blueDiffuseMat,
-								Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
-								Cvec3(0, 0, 0),
-								Cvec3(.01, .2, .01)));
-
-				g_world->addChild(shape);
-				particle_system[i].node = shape;
-			}
-
-
-			particle_system[i].y -= particle_system[i].v;
-
-
-			float stop; 
-			if (weather == RAIN) 
-				stop = g_groundY - 1.5;
-			else 
-				stop = g_groundY -.2;
-
-			if (particle_system[i].y <= stop) {
 				if (weather == SNOW) {
+					particle_system[i].v = rand() % 1000 / 10000.; 
 					shared_ptr<MyShapeNode> shape(
-							new MyShapeNode(g_sphere,
-								g_lightMat,
-								Cvec3(particle_system[i].x, g_groundY, particle_system[i].z),
-								Cvec3(0, 0, 0),
-								Cvec3(.1, .000001, .1)));
+								new MyShapeNode(g_sphere,
+									g_lightMat,
+									Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(.1, .1, .1)));
 
 					g_world->addChild(shape);
+					particle_system[i].node = shape;
 				}
+				else {
+					particle_system[i].v = rand() % 1000 / 1000.; 
+					shared_ptr<MyShapeNode> shape(
+								new MyShapeNode(g_sphere,
+									g_blueDiffuseMat,
+									Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(.01, .2, .01)));
 
-				initParticle(i);
+					g_world->addChild(shape);
+					particle_system[i].node = shape;
+				}
+				particle_system[i].y -= particle_system[i].v;
+			
+
+
+				float stop; 
+				if (weather == RAIN) 
+					stop = g_groundY - 1.5;
+				else 
+					stop = g_groundY -.2;
+
+				if (particle_system[i].y <= stop) {
+					g_world->removeChild(particle_system[i].node);
+					if (weather == SNOW) {
+						shared_ptr<MyShapeNode> shape(
+								new MyShapeNode(g_sphere,
+									g_lightMat,
+									Cvec3(particle_system[i].x, g_groundY, particle_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(.1, .000001, .1)));
+
+						g_world->addChild(shape);
+						initParticle(i);
+					}
+
+					else { 
+						splashing = 1;
+						particle_system[i].splashx = particle_system[i].x + .5;
+					}
+				}
 			}
 		}
 	}
 }
 
+
+float cloud_speed[5] = {.03, .02, .01};
+
+void initClouds(void) {
+	for (int i = 0; i < CLOUDS; i++) {
+		if (neg) {
+			cloud_system[i].x = - static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize))) ;
+			cloud_system[i].v = cloud_speed[i%3]; 
+			neg = 0;
+		}
+		else {
+			cloud_system[i].x = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize))) ;
+			cloud_system[i].v = - .05; 
+			neg = 1;
+		}
+
+		cloud_system[i].y = 20.0;
+
+		cloud_system[i].z = - 2 * static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize)))  + g_groundSize;
+
+
+		shared_ptr<MyShapeNode> cloud1(
+						new MyShapeNode(g_sphere,
+							g_lightMat,
+							Cvec3(cloud_system[i].x, 20, cloud_system[i].z),
+							Cvec3(0, 0, 0),
+							Cvec3(1, 1, 1)));
+
+		shared_ptr<MyShapeNode> cloud2(
+								new MyShapeNode(g_sphere,
+									g_lightMat,
+									Cvec3(cloud_system[i].x + 1, 20, cloud_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(1.5, 1.5, 1.5)));
+
+		shared_ptr<MyShapeNode> cloud3(
+								new MyShapeNode(g_sphere,
+									g_lightMat,
+									Cvec3(cloud_system[i].x -1, 20, cloud_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(1, 1, 1)));
+
+		shared_ptr<MyShapeNode> cloud4(
+								new MyShapeNode(g_sphere,
+									g_lightMat,
+									Cvec3(cloud_system[i].x + 2, 20, cloud_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(1, 1, 1)));
+
+		cloud_system[i].ball1 = cloud1; 
+		cloud_system[i].ball2 = cloud2; 
+		cloud_system[i].ball3 = cloud3; 
+		cloud_system[i].ball4 = cloud4; 
+
+		g_world->addChild(cloud1);
+		g_world->addChild(cloud2);
+		g_world->addChild(cloud3);
+		g_world->addChild(cloud4);
+
+	}
+}
+
+void drawClouds(void) {
+	for (int i = 0; i < CLOUDS; i ++) {
+		g_world->removeChild(cloud_system[i].ball1);
+		g_world->removeChild(cloud_system[i].ball2);
+		g_world->removeChild(cloud_system[i].ball3);
+		g_world->removeChild(cloud_system[i].ball4);
+
+		cloud_system[i].x += cloud_system[i].v;
+
+		if (cloud_system[i].x > 20 || cloud_system[i].x < -20)
+			cloud_system[i].v = -1 * cloud_system[i].v;
+
+		shared_ptr<Material> mat;
+
+		if (weather == CLEAR) 
+			mat = g_lightMat;
+		else 
+			mat = g_stormMat;
+
+		shared_ptr<MyShapeNode> cloud1(
+								new MyShapeNode(g_sphere,
+									mat,
+									Cvec3(cloud_system[i].x, 20, cloud_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(1, 1, 1)));
+
+		shared_ptr<MyShapeNode> cloud2(
+								new MyShapeNode(g_sphere,
+									mat,
+									Cvec3(cloud_system[i].x + 1, 20, cloud_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(1.5, 1.5, 1.5)));
+
+		shared_ptr<MyShapeNode> cloud3(
+								new MyShapeNode(g_sphere,
+									mat,
+									Cvec3(cloud_system[i].x -1, 20, cloud_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(1, 1, 1)));
+
+		shared_ptr<MyShapeNode> cloud4(
+								new MyShapeNode(g_sphere,
+									mat,
+									Cvec3(cloud_system[i].x + 2, 20, cloud_system[i].z),
+									Cvec3(0, 0, 0),
+									Cvec3(1, 1, 1)));
+
+		cloud_system[i].ball1 = cloud1; 
+		cloud_system[i].ball2 = cloud2; 
+		cloud_system[i].ball3 = cloud3; 
+		cloud_system[i].ball4 = cloud4; 
+
+		g_world->addChild(cloud1);
+		g_world->addChild(cloud2);
+		g_world->addChild(cloud3);
+		g_world->addChild(cloud4);
+		
+	}
+
+}
 
 
 double tick = 0.0; 
@@ -757,6 +929,7 @@ static void drawStuff(bool picking) {
 
 	drawRain(); 
 	drawSun();
+	drawClouds();
 	
 	// if we are not translating, update arcball scale
 	if (!(g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton) || (g_mouseLClickButton && !g_mouseRClickButton && g_spaceDown)))
@@ -801,12 +974,56 @@ static void drawStuff(bool picking) {
 	}
 }
 
-static void display() {
+// static void display() {
 
+// 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+// 	drawStuff(false);
+
+
+// 	glutSwapBuffers();
+
+// 	checkGlErrors();
+// }
+
+void drawBitmapText(char *string, float x, float y, float z)
+{
+	char *c;
+	
+	glRasterPos3f(x, y, z);
+
+
+	for (c = string; *c != '\0'; c++)
+	{
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+	}
+}
+static void display() {
+	glClearColor;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	drawStuff(false);
 
+	glPushAttrib(GL_CURRENT_BIT);
+	glColor3f(1.0, 0.0, 0.0);
+	int tick_int;
+	tick_int = (int (tick *1.9) + 12) % 24; 
+	char tickbuffer[10000];
+
+	char* tickstring = strcat( vstr(tick_int), ":00");
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, g_windowWidth, 0, g_windowHeight, -1, 1);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glDisable(GL_LIGHTING);
+	//glColor3f(0.0f, 0.0f, 0.0f);
+	drawBitmapText(tickstring, g_windowWidth - 100, g_windowHeight - 25, 0);
+	glEnable(GL_LIGHTING);
+	glPopAttrib();
 
 	glutSwapBuffers();
 
@@ -1375,6 +1592,9 @@ static void initMaterials() {
 	g_lightMat.reset(new Material(solid));
 	g_lightMat->getUniforms().put("uColor", Cvec3f(1, 1, 1));
 
+	g_stormMat.reset(new Material(solid));
+	g_stormMat->getUniforms().put("uColor", Cvec3f(.8, .8, .8));
+
 	// pick shader
 	g_pickingMat.reset(new Material("./shaders/basic-gl3.vshader", "./shaders/pick-gl3.fshader"));
 
@@ -1498,7 +1718,7 @@ static void initScene() {
 	g_world.reset(new SgRootNode());
 
 
-	g_skyNode.reset(new SgRbtNode(RigTForm(Cvec3(0.0, 2.0, 10.0))));
+	g_skyNode.reset(new SgRbtNode(RigTForm(Cvec3(0.0, 10.0, 30.0))));
 
 	g_groundNode.reset(new SgRbtNode(RigTForm(Cvec3(0, g_groundY, 0))));
 	g_groundNode->addChild(shared_ptr<MyShapeNode>(
@@ -1578,6 +1798,7 @@ int main(int argc, char * argv[]) {
 		initScene();
 		initAnimation();
 		initParticles(); 
+		initClouds();
 		glutMainLoop();
 		return 0;
 	}
