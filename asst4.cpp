@@ -456,7 +456,7 @@ void drawRain(void) {
 }
 
 
-float cloud_speed[5] = {.03, .02, .01};
+float cloud_speed[3] = {.03, .02, .01};
 
 void initClouds(void) {
 	for (int i = 0; i < CLOUDS; i++) {
@@ -474,6 +474,7 @@ void initClouds(void) {
 		cloud_system[i].y = 20.0;
 
 		cloud_system[i].z = - 2 * static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize)))  + g_groundSize;
+
 
 
 		shared_ptr<MyShapeNode> cloud1(
@@ -517,7 +518,15 @@ void initClouds(void) {
 	}
 }
 
+float bloat = 1.0; 
+
 void drawClouds(void) {
+	if (weather != CLEAR && bloat <= 2.0)
+		bloat += .01;
+	else if (weather == CLEAR && bloat >= 1.0)
+		bloat -= .01; 
+	cerr << bloat << endl;
+
 	for (int i = 0; i < CLOUDS; i ++) {
 		g_world->removeChild(cloud_system[i].ball1);
 		g_world->removeChild(cloud_system[i].ball2);
@@ -541,28 +550,28 @@ void drawClouds(void) {
 									mat,
 									Cvec3(cloud_system[i].x, 20, cloud_system[i].z),
 									Cvec3(0, 0, 0),
-									Cvec3(1, 1, 1)));
+									Cvec3(1*bloat, 1*bloat, 1*bloat)));
 
 		shared_ptr<MyShapeNode> cloud2(
 								new MyShapeNode(g_sphere,
 									mat,
 									Cvec3(cloud_system[i].x + 1, 20, cloud_system[i].z),
 									Cvec3(0, 0, 0),
-									Cvec3(1.5, 1.5, 1.5)));
+									Cvec3(1.5*bloat, 1.5*bloat, 1.5*bloat)));
 
 		shared_ptr<MyShapeNode> cloud3(
 								new MyShapeNode(g_sphere,
 									mat,
 									Cvec3(cloud_system[i].x -1, 20, cloud_system[i].z),
 									Cvec3(0, 0, 0),
-									Cvec3(1, 1, 1)));
+									Cvec3(1*bloat, 1*bloat, 1*bloat)));
 
 		shared_ptr<MyShapeNode> cloud4(
 								new MyShapeNode(g_sphere,
 									mat,
 									Cvec3(cloud_system[i].x + 2, 20, cloud_system[i].z),
 									Cvec3(0, 0, 0),
-									Cvec3(1, 1, 1)));
+									Cvec3(1*bloat, 1*bloat, 1*bloat)));
 
 		cloud_system[i].ball1 = cloud1; 
 		cloud_system[i].ball2 = cloud2; 
@@ -1436,9 +1445,11 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 	 		initParticles();
 	 		cerr << "weather forecast is rainy\n" << endl;
 	 	}
-	 	else if (weather == SNOW)
+	 	else if (weather == SNOW) {
 	 		cerr << "weather forecast is snowy\n" << endl;
+	 	}
 	 	else {
+	 		//bloat = 0.0;
 	 		for (int i = 0; i < PARTICLES; i++) 
 	 			g_world->removeChild(particle_system[i].node);
 	 		cerr << "weather forecast is clear\n" << endl;
