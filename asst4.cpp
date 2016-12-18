@@ -50,8 +50,6 @@
 #define EMBED_SOLUTION_GLSL 1
 #define PI 3.14159265
 
-#define vstr(s) str(s) 
-#define str(s)
 using namespace std;
 using namespace tr1;
 
@@ -311,7 +309,10 @@ typedef struct {
 	float v; // velocity 
 	float splashx;
 
+	int splashing;
+
 	shared_ptr<MyShapeNode> node;
+	shared_ptr<MyShapeNode> rainspot;
 
 } particles;
 
@@ -328,7 +329,7 @@ typedef struct {
 } clouds;
 
 
-#define PARTICLES 3000
+#define PARTICLES 1000
 #define CLOUDS 20 
 
 particles particle_system[PARTICLES];
@@ -342,6 +343,7 @@ shared_ptr<MyShapeNode> sun;
 
 
 void initParticle(int i) {
+	particle_system[i].splashing = 0;
 	if (neg) {
 		particle_system[i].x = - static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize))) ;
 		neg = 0;
@@ -351,6 +353,7 @@ void initParticle(int i) {
 		neg = 1;
 	}
 
+	particle_system[i].splashx = particle_system[i].x + .5;
 	particle_system[i].y = 20.0;
 
 	particle_system[i].z = - 2 * static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/(g_groundSize)))  + g_groundSize;
@@ -376,88 +379,78 @@ void initParticles(void) {
 	}
 }
 
-void drawSplash(int i) {
-	particle_system[i].y = pow((double) (particle_system[i].x -  particle_system[i].splashx), (double) 2.0) + .5;
-	particle_system[i].x += .01;
-
-	shared_ptr<MyShapeNode> shape(
-			new MyShapeNode(g_sphere,
-				g_blueDiffuseMat,
-				Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
-				Cvec3(0, 0, 0),
-				Cvec3(.01, .2, .01)));
-
-	g_world->addChild(shape);
-
-	if (particle_system[i].x == particle_system[i].splashx + .5) {
-		g_world->removeChild(particle_system[i].node); 
-		splashing = 0;
-		initParticle(i);
-	}
-}
-
 void drawRain(void) {
 	if (weather != CLEAR) {
-		for (int i = 0; i < PARTICLES; i += 20) {
+		for (int i = 0; i < PARTICLES; i += 10) {
+			if (particle_system[i].splashing) {
+				g_world->removeChild(particle_system[i].rainspot);
+				particle_system[i].splashing = 0;
+			}
+
 			g_world->removeChild(particle_system[i].node);
 
-			if (splashing)
-				drawSplash(i);
+			if (weather == SNOW) {
+				particle_system[i].v = rand() % 1000 / 10000.; 
+				shared_ptr<MyShapeNode> shape(
+							new MyShapeNode(g_sphere,
+								g_lightMat,
+								Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
+								Cvec3(0, 0, 0),
+								Cvec3(.1, .1, .1)));
+
+				g_world->addChild(shape);
+				particle_system[i].node = shape;
+			}
 			else {
+				particle_system[i].v = rand() % 1000 / 1000.; 
+				shared_ptr<MyShapeNode> shape(
+							new MyShapeNode(g_sphere,
+								g_blueDiffuseMat,
+								Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
+								Cvec3(0, 0, 0),
+								Cvec3(.01, .2, .01)));
+				g_world->addChild(shape);
+				particle_system[i].node = shape;
+			}
+			particle_system[i].y -= particle_system[i].v;
+		
+
+
+			float stop; 
+			if (weather == RAIN) 
+				stop = g_groundY - 1.5;
+			else 
+				stop = g_groundY -.2;
+
+			if (particle_system[i].y <= stop) {
+				g_world->removeChild(particle_system[i].node);
 				if (weather == SNOW) {
-					particle_system[i].v = rand() % 1000 / 10000.; 
 					shared_ptr<MyShapeNode> shape(
-								new MyShapeNode(g_sphere,
-									g_lightMat,
-									Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
-									Cvec3(0, 0, 0),
-									Cvec3(.1, .1, .1)));
+							new MyShapeNode(g_sphere,
+								g_lightMat,
+								Cvec3(particle_system[i].x, g_groundY, particle_system[i].z),
+								Cvec3(0, 0, 0),
+								Cvec3(.1, .000001, .1)));
 
 					g_world->addChild(shape);
-					particle_system[i].node = shape;
+					initParticle(i);
 				}
-				else {
-					particle_system[i].v = rand() % 1000 / 1000.; 
+
+				else { 
 					shared_ptr<MyShapeNode> shape(
-								new MyShapeNode(g_sphere,
-									g_blueDiffuseMat,
-									Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
-									Cvec3(0, 0, 0),
-									Cvec3(.01, .2, .01)));
+							new MyShapeNode(g_sphere,
+								g_blueDiffuseMat,
+								Cvec3(particle_system[i].x, g_groundY, particle_system[i].z),
+								Cvec3(0, 0, 0),
+								Cvec3(.1, .000001, .1)));
 
 					g_world->addChild(shape);
-					particle_system[i].node = shape;
-				}
-				particle_system[i].y -= particle_system[i].v;
-			
-
-
-				float stop; 
-				if (weather == RAIN) 
-					stop = g_groundY - 1.5;
-				else 
-					stop = g_groundY -.2;
-
-				if (particle_system[i].y <= stop) {
-					g_world->removeChild(particle_system[i].node);
-					if (weather == SNOW) {
-						shared_ptr<MyShapeNode> shape(
-								new MyShapeNode(g_sphere,
-									g_lightMat,
-									Cvec3(particle_system[i].x, g_groundY, particle_system[i].z),
-									Cvec3(0, 0, 0),
-									Cvec3(.1, .000001, .1)));
-
-						g_world->addChild(shape);
-						initParticle(i);
-					}
-
-					else { 
-						splashing = 1;
-						particle_system[i].splashx = particle_system[i].x + .5;
-					}
+					particle_system[i].splashing = 1;
+					particle_system[i].rainspot = shape;
+					initParticle(i);
 				}
 			}
+			
 		}
 	}
 }
@@ -593,6 +586,7 @@ void drawSun(void) {
 	g_sun->removeChild(sun);
 
 	Cvec3 newPos = Cvec3((g_groundSize + 5) * sin(- tick) - g_groundSize, (g_groundSize + 5) * cos(tick), -4.0);
+	
 	g_sun.reset(new SgRbtNode(RigTForm(newPos)));
 
 	shared_ptr<MyShapeNode> shape(
@@ -604,7 +598,17 @@ void drawSun(void) {
 	g_world->addChild(g_sun);
 	tick += 0.001;
 
+	float modified = fmod(tick, 6.28);
+
+	float r = (128 + 8*newPos[1] > 255) ? 255. : (128. + 8*newPos[1] > 255.);
+	float g = (200 + 8*newPos[1] > 255) ? 255. : (200. + 8*newPos[1] > 255.);
+	float b = 255.;
+
+	glClearColor(r / 255., g / 255., b / 255., 0.);
+
 }
+
+
 
 
 static VertexPN findvertex(Mesh::Vertex v, int layer) {
@@ -986,49 +990,62 @@ static void drawStuff(bool picking) {
 // 	checkGlErrors();
 // }
 
-void drawBitmapText(char *string, float x, float y, float z)
-{
-	char *c;
+// void drawBitmapText(char *string, float x, float y, float z)
+// {
+// 	char *c;
 	
-	glRasterPos3f(x, y, z);
+// 	glRasterPos3f(x, y, z);
 
+// 	for (c = string; *c != '\0'; c++)
+// 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+	
+// }
 
-	for (c = string; *c != '\0'; c++)
-	{
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
-	}
-}
 static void display() {
-	glClearColor;
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	drawStuff(false);
 
-	glPushAttrib(GL_CURRENT_BIT);
-	glColor3f(1.0, 0.0, 0.0);
-	int tick_int;
-	tick_int = (int (tick *1.9) + 12) % 24; 
-	char tickbuffer[10000];
+	// const unsigned char * string = vstr(tick);
 
-	char* tickstring = strcat( vstr(tick_int), ":00");
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0, g_windowWidth, 0, g_windowHeight, -1, 1);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	glDisable(GL_LIGHTING);
-	//glColor3f(0.0f, 0.0f, 0.0f);
-	drawBitmapText(tickstring, g_windowWidth - 100, g_windowHeight - 25, 0);
-	glEnable(GL_LIGHTING);
-	glPopAttrib();
-
+	// glutBitmapString(GLUT_BITMAP_HELVETICA_18, NumberToString(tick) );
 	glutSwapBuffers();
 
 	checkGlErrors();
 }
+
+// static void display() {
+// 	glClearColor;
+// 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+// 	drawStuff(false);
+
+// 	glPushAttrib(GL_CURRENT_BIT);
+// 	glColor3f(1.0, 0.0, 0.0);
+// 	int tick_int;
+// 	tick_int = (int (tick *1.9) + 12) % 24; 
+// 	char tickbuffer[10000];
+
+// 	const char* tickstring = vstr(tick_int) + ":00";
+
+// 	glMatrixMode(GL_PROJECTION);
+// 	glLoadIdentity();
+// 	glOrtho(0, g_windowWidth, 0, g_windowHeight, -1, 1);
+
+// 	glMatrixMode(GL_MODELVIEW);
+// 	glLoadIdentity();
+
+// 	glDisable(GL_LIGHTING);
+// 	//glColor3f(0.0f, 0.0f, 0.0f);
+// 	drawBitmapText((char *) tickstring, g_windowWidth - 100, g_windowHeight - 25, 0);
+// 	glEnable(GL_LIGHTING);
+// 	glPopAttrib();
+
+// 	glutSwapBuffers();
+
+// 	checkGlErrors();
+// }
 
 static void pick() {
 	// We need to set the clear color to black, for pick rendering.
@@ -1585,7 +1602,7 @@ static void initMaterials() {
 
 	// copy solid prototype, and set to wireframed rendering
 	g_arcballMat.reset(new Material(solid));
-	g_arcballMat->getUniforms().put("uColor", Cvec3f(0.27f, 0.82f, 0.35f));
+	g_arcballMat->getUniforms().put("uColor", Cvec3f(1.f, 1.f, 1.f));
 	g_arcballMat->getRenderStates().polygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// copy solid prototype, and set to color white
@@ -1722,7 +1739,7 @@ static void initScene() {
 
 	g_groundNode.reset(new SgRbtNode(RigTForm(Cvec3(0, g_groundY, 0))));
 	g_groundNode->addChild(shared_ptr<MyShapeNode>(
-		new MyShapeNode(g_ground, g_greenSolidMat)));
+		new MyShapeNode(g_ground, g_bumpFloorMat)));
 
 	// create a single transform node for both the bunny and the bunny shells
 	g_bunnyNode.reset(new SgRbtNode());
