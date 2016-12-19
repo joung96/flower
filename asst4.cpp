@@ -17,6 +17,7 @@
 #include <stdio.h> 
 #include <stdlib.h>
 #include <sstream> 
+#include <string>
 
 #if __GNUG__
 #   include <tr1/memory>
@@ -987,42 +988,63 @@ static void drawStuff(bool picking) {
 	}
 }
 
-// static void display() {
+void drawBitmapText(char *string, float x, float y, float z)
+{
+	char *c;
+	glRasterPos3f(x, y, z);
 
-// 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	for (c = string; *c != '\0'; c++)
+	{
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
+	}
+}
+void drawBitmapText(string str, float x, float y, float z)
+{
+	string::iterator it;
+	int index = 0;
+	glRasterPos3f(x, y, z);
 
-// 	drawStuff(false);
-
-
-// 	glutSwapBuffers();
-
-// 	checkGlErrors();
-// }
-
-// void drawBitmapText(char *string, float x, float y, float z)
-// {
-// 	char *c;
-	
-// 	glRasterPos3f(x, y, z);
-
-// 	for (c = string; *c != '\0'; c++)
-// 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
-	
-// }
+	for (it = str.begin(); it < str.end(); it++, index++)
+	{
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, str[index]);
+	}
+}
 
 static void display() {
+	glClearColor;
+ 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+ 	drawStuff(false);
 
-	drawStuff(false);
+ 	glPushAttrib(GL_CURRENT_BIT);
+ 	glColor3f(1.0, 0.0, 0.0);
+ 	int tick_int;
+ 	tick_int = (int (tick *1.9) + 12) % 24; 
+ 	char tickbuffer[100];
 
-	// const unsigned char * string = vstr(tick);
+	string tickstring = "Time:" + to_string(tick_int) + ":00";
 
-	// glutBitmapString(GLUT_BITMAP_HELVETICA_18, NumberToString(tick) );
-	glutSwapBuffers();
+	
+ 	//char* tickstring = strcat(itoa(tick_int, tickbuffer, 10), ":00");
 
-	checkGlErrors();
-}
+ 	glMatrixMode(GL_PROJECTION);
+ 	glLoadIdentity();
+ 	glOrtho(0, g_windowWidth, 0, g_windowHeight, -1, 1);
+
+ 	glMatrixMode(GL_MODELVIEW);
+ 	glLoadIdentity();
+
+	 glDisable(GL_LIGHTING);
+ 	glColor3f(255.0f, 255.0f, 255.0f);
+ 	drawBitmapText(tickstring, g_windowWidth - 100, g_windowHeight - 25, 0);
+ 	glEnable(GL_LIGHTING);
+ 	glPopAttrib();
+
+ 	glutSwapBuffers();
+
+ 	checkGlErrors();
+ }
+
 
 // static void display() {
 // 	glClearColor;
