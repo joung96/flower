@@ -94,6 +94,8 @@ static int g_activeShader = 0;
 static SkyMode g_activeCameraFrame = WORLD_SKY;
 static Weather weather = CLEAR;
 int splashing = 0;
+float particleSize = .01;
+float velocity = 0.0;
 
 static bool g_displayArcball = true;
 static double g_arcballScreenRadius = 100; // number of pixels
@@ -397,10 +399,12 @@ void drawRain(void) {
 								g_lightMat,
 								Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
 								Cvec3(0, 0, 0),
-								Cvec3(.1, .1, .1)));
+								Cvec3(10 * particleSize, 10 * particleSize, 10 * particleSize)));
 
 				g_world->addChild(shape);
 				particle_system[i].node = shape;
+
+				particle_system[i].y -= (particle_system[i].v + velocity);
 			}
 			else {
 				particle_system[i].v = rand() % 1000 / 1000.; 
@@ -409,13 +413,13 @@ void drawRain(void) {
 								g_blueDiffuseMat,
 								Cvec3(particle_system[i].x, particle_system[i].y, particle_system[i].z),
 								Cvec3(0, 0, 0),
-								Cvec3(.01, .2, .01)));
+								Cvec3(particleSize, .2, particleSize)));
 				g_world->addChild(shape);
 				particle_system[i].node = shape;
-			}
-			particle_system[i].y -= particle_system[i].v;
-		
 
+				particle_system[i].y -= (particle_system[i].v + velocity);
+			}
+			
 
 			float stop; 
 			if (weather == RAIN) 
@@ -429,9 +433,9 @@ void drawRain(void) {
 					shared_ptr<MyShapeNode> shape(
 							new MyShapeNode(g_sphere,
 								g_lightMat,
-								Cvec3(particle_system[i].x, g_groundY, particle_system[i].z),
+								Cvec3(particle_system[i].x, g_groundY + .01, particle_system[i].z),
 								Cvec3(0, 0, 0),
-								Cvec3(.1, .000001, .1)));
+								Cvec3(.1, .001, .1)));
 
 					g_world->addChild(shape);
 					initParticle(i);
@@ -443,8 +447,7 @@ void drawRain(void) {
 								g_blueDiffuseMat,
 								Cvec3(particle_system[i].x, g_groundY, particle_system[i].z),
 								Cvec3(0, 0, 0),
-								Cvec3(.1, .000001, .1)));
-
+								Cvec3(.1, .001, .1)));
 					g_world->addChild(shape);
 					particle_system[i].splashing = 1;
 					particle_system[i].rainspot = shape;
@@ -526,7 +529,6 @@ void drawClouds(void) {
 		bloat += .01;
 	else if (weather == CLEAR && bloat >= 1.0)
 		bloat -= .01; 
-	cerr << bloat << endl;
 
 	for (int i = 0; i < CLOUDS; i ++) {
 		g_world->removeChild(cloud_system[i].ball1);
@@ -617,8 +619,6 @@ void drawSun(void) {
 	glClearColor(r / 255., g / 255., b / 255., 0.);
 
 }
-
-
 
 
 static VertexPN findvertex(Mesh::Vertex v, int layer) {
@@ -1045,39 +1045,6 @@ static void display() {
  	checkGlErrors();
  }
 
-
-// static void display() {
-// 	glClearColor;
-// 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-// 	drawStuff(false);
-
-// 	glPushAttrib(GL_CURRENT_BIT);
-// 	glColor3f(1.0, 0.0, 0.0);
-// 	int tick_int;
-// 	tick_int = (int (tick *1.9) + 12) % 24; 
-// 	char tickbuffer[10000];
-
-// 	const char* tickstring = vstr(tick_int) + ":00";
-
-// 	glMatrixMode(GL_PROJECTION);
-// 	glLoadIdentity();
-// 	glOrtho(0, g_windowWidth, 0, g_windowHeight, -1, 1);
-
-// 	glMatrixMode(GL_MODELVIEW);
-// 	glLoadIdentity();
-
-// 	glDisable(GL_LIGHTING);
-// 	//glColor3f(0.0f, 0.0f, 0.0f);
-// 	drawBitmapText((char *) tickstring, g_windowWidth - 100, g_windowHeight - 25, 0);
-// 	glEnable(GL_LIGHTING);
-// 	glPopAttrib();
-
-// 	glutSwapBuffers();
-
-// 	checkGlErrors();
-// }
-
 static void pick() {
 	// We need to set the clear color to black, for pick rendering.
 	// so let's save the clear color
@@ -1471,12 +1438,31 @@ static void keyboard(const unsigned char key, const int x, const int y) {
 	 		cerr << "weather forecast is snowy\n" << endl;
 	 	}
 	 	else {
-	 		//bloat = 0.0;
 	 		for (int i = 0; i < PARTICLES; i++) 
 	 			g_world->removeChild(particle_system[i].node);
 	 		cerr << "weather forecast is clear\n" << endl;
 	 	}
 	 	break;
+	 case'z':
+	 	if (particleSize < .05)
+	 		particleSize += .01;
+	 	cerr << "Particle size is " << particleSize << endl; 
+	 	break; 
+	 case 'x':
+	 	if (particleSize > .01)
+	 		particleSize -= .01;
+	 	cerr << "Particle size is " << particleSize << endl; 
+	 	break;
+	 case 'k': 
+	 	if (velocity < .5)
+	 		velocity += .01; 
+	 	cerr << "Velocity is " << velocity << endl; 
+	 	break; 
+	 case 'l': 
+	 	if (velocity > 0.0)
+	 		velocity -= .01; 
+	 	cerr << "Velocity is " << velocity << endl; 
+	 	break; 
 	}
 
 	// Sanity check that our g_curKeyFrameNum is in sync with the g_curKeyFrame
